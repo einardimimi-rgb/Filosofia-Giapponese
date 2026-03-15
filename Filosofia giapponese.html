@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Concetti — Accordion animato, alternato e mutuamente esclusivo</title>
+  <meta name="description" content="Card alternate con immagine a sinistra/destra e accordion animato (altezza + dissolvenza), mutuamente esclusivo." />
+  <style>
+    /* Reset di base */
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; line-height: 1.5; color: #0f172a; background: #f8fafc; }
+    img { max-width: 100%; display: block; }
+
+    /* Contenitore */
+    .container { width: min(1100px, 92vw); margin-inline: auto; padding: 2rem 0 4rem; }
+
+    header { text-align: center; margin-bottom: 2rem; }
+    header h1 { margin: 0 0 .5rem; font-size: clamp(1.6rem, 2.5vw + 1rem, 2.4rem); color: #0f172a; }
+    header p { margin: 0; color: #475569; }
+
+    /* Toolbar */
+    .toolbar { display: grid; grid-template-columns: 1fr auto; gap: .75rem; margin: 1.5rem 0 1rem; }
+    .search { padding: .7rem .9rem; border: 1px solid #cbd5e1; border-radius: .75rem; font-size: 1rem; }
+    .view-toggle { display: inline-flex; gap: .5rem; }
+    .btn { padding: .65rem .9rem; border: 1px solid #cbd5e1; background: white; color: #0f172a; border-radius: .75rem; cursor: pointer; }
+    .btn[aria-pressed="true"] { background: #0ea5e9; color: white; border-color: #0ea5e9; }
+
+    /* Griglia contenitore delle card */
+    .grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    @media (min-width: 960px) { .grid { grid-template-columns: 1fr 1fr; } } /* due card affiancate */
+
+    /* CARD con layout alternato */
+    .card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column; /* mobile: verticale */
+      transition: box-shadow .2s ease, transform .2s ease;
+    }
+    .card:hover { box-shadow: 0 10px 24px rgba(2, 8, 23, 0.08); transform: translateY(-2px); }
+
+    @media (min-width: 640px) {
+      .card { flex-direction: row; min-height: 180px; }
+      .card:nth-child(even) { flex-direction: row-reverse; } /* alternanza */
+    }
+
+    /* Media (immagine) */
+    .card__media {
+      background: #f1f5f9;
+      aspect-ratio: 16 / 9; /* proporzione su mobile */
+      overflow: hidden;
+    }
+    .card__media img { width: 100%; height: 100%; object-fit: cover; }
+
+    @media (min-width: 640px) {
+      .card__media { flex: 0 0 40%; aspect-ratio: auto; height: auto; max-height: 240px; }
+      .card__body { flex: 1; }
+    }
+
+    /* Corpo testuale */
+    .card__body { padding: 1rem 1rem 1.1rem; display: grid; gap: .6rem; align-content: start; }
+    .card__title { margin: 0; font-size: 1.1rem; color: #0f172a; }
+    .card__desc { margin: 0; color: #475569; font-size: .98rem; }
+    .card__tags { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .2rem; }
+    .tag { font-size: .75rem; background: #e2e8f0; color: #334155; padding: .25rem .5rem; border-radius: 999px; }
+
+    /* ========== ACCORDION ========== */
+    .accordion { margin-top: .6rem; border-top: 1px solid #e2e8f0; padding-top: .6rem; }
+    .accordion > summary {
+      list-style: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      font-weight: 600;
+      color: #0ea5e9;
+      outline: none;
+      user-select: none;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    .accordion > summary::after {
+      content: "▾"; font-size: .95rem; line-height: 1;
+      transform: rotate(0deg); transition: transform .2s ease;
+    }
+    .accordion[open] > summary::after { transform: rotate(180deg); }
+
+    /* Contenuto animabile: altezza + dissolvenza */
+    .accordion__content {
+      overflow: hidden;
+      height: 0;
+      opacity: 0;
+      visibility: hidden; /* niente tab/focus quando chiuso */
+      will-change: height, opacity;
+    }
+    .accordion.is-animating .accordion__content {
+      /* la transition viene impostata via JS */
+    }
+    .accordion[open] .accordion__content {
+      /* stato finale gestito via JS (height:auto) */
+      visibility: visible;
+    }
+
+    .links { margin: .5rem 0 0 1.1rem; padding: 0; }
+    .links li { margin: .25rem 0; }
+    .links a {
+      color: #0f172a; text-decoration: underline;
+      text-decoration-color: #94a3b8; text-underline-offset: 2px;
+    }
+    .links a:hover { color: #0ea5e9; }
+
+    /* Stato “nessun risultato” */
+    .empty { display: none; text-align: center; color: #64748b; padding: 2rem 1rem; }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+      body { background: #0b1220; color: #e5e7eb; }
+      header h1 { color: #e5e7eb; }
+      header p { color: #94a3b8; }
+      .search { background: #0b1220; color: #e5e7eb; border-color: #334155; }
+      .btn { background: #0b1220; color: #e2e7eb; border-color: #334155; }
+      .grid .card { background: #0f172a; border-color: #1f2937; }
+      .card__desc { color: #cbd5e1; }
+      .tag { background: #1f2937; color: #e2e8f0; }
+      .accordion { border-top-color: #334155; }
+      .links a { color: #e5e7eb; text-decoration-color: #64748b; }
+      .links a:hover { color: #7dd3fc; }
+    }
+
+    /* Vista lista (opzionale: forza 1 colonna) */
+    .grid.list { grid-template-columns: 1fr !important; }
+
+    /* Accessibilità: riduci animazioni */
+    @media (prefers-reduced-motion: reduce) {
+      .accordion__content { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Concetti chiave</h1>
+      <p>Card alternate con accordion animato (altezza + dissolvenza) e apertura mutuamente esclusiva.</p>
+    </header>
+
+    <!-- Toolbar -->
+    <div class="toolbar" role="region" aria-label="Strumenti di visualizzazione">
+      <input id="search" class="search" type="search" placeholder="Cerca concetti..." aria-label="Cerca concetti" />
+      <div class="view-toggle" role="group" aria-label="Impostazioni di visualizzazione">
+        <button class="btn" id="gridBtn" aria-pressed="true" title="Vista griglia">Griglia</button>
+        <button class="btn" id="listBtn" aria-pressed="false" title="Vista lista">Lista</button>
+      </div>
+    </div>
+
+    <!-- Elenco concetti -->
+    <section id="concepts" class="grid" aria-live="polite">
+      <!-- CARD 1 (immagine a sinistra) -->
+      <article class="card" data-title="Astrazione" data-tags="design,software,modelli">
+        <div class="card__media">
+          https://images.unsplash.com/photo-1526378722484-bd91ca387e72?q=80&w=1200&auto=format&fit=crop
+        </div>
+        <div class="card__body">
+          <h2 class="card__title">Astrazione</h2>
+          <p class="card__desc">Processo di semplificazione che nasconde i dettagli complessi per mettere in evidenza la struttura essenziale.</p>
+          <div class="card__tags">
+            <span class="tag">Design</span><span class="tag">Software</span><span class="tag">Modelli</span>
+          </div>
+
+          <!-- Accordion animato + fade -->
+          <details class="accordion">
+            <summary aria-controls="acc1" aria-expanded="false">Risorse & link</summary>
+            <div id="acc1" class="accordion__content" role="region" aria-label="Risorse su astrazione">
+              <ul class="links">
+                <li><a href="https://it.wikipedia.org/wiki/Astrazione_(informatica)" target="_blank" rel="noopener">Astrazione (Wikipedia)</a></li>
+              </ul>
+            </div>
+          </details>
+        </div>
+      </article>
+
+      <!-- CARD 2 (immagine a destra) -->
+      <article class="card" data-title="Modularità" data-tags="architettura,riuso,scalabilità">
+        <div class="card__media">
+          https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200&auto=format&fit=crop
+        </div>
+        <div class="card__body">
+          <h2 class="card__title">Modularità</h2>
+          <p class="card__desc">Organizzazione del sistema in componenti indipendenti che possono essere sviluppati, testati e riutilizzati separatamente.</p>
+          <div class="card__tags">
+            <span class="tag">Architettura</span><span class="tag">Riuso</span><span class="tag">Scalabilità</span>
+          </div>
+
+          <!-- Accordion animato + fade -->
+          <details class="accordion">
+            <summary aria-controls="acc2" aria-expanded="false">Risorse & link</summary>
+            <div id="acc2" class="accordion__content" role="region" aria-label="Risorse su modularità">
+              <ul class="links">
+                <li><a href="https://it.wikipedia.org/wiki/Modularit%C3%A0" target="_blank" rel="noopener">Modularità (Wikipedia)</a></li>
+              </ul>
+            </div>
+          </details>
+        </div>
+      </article>
+
+      <!-- CARD 3 (immagine a sinistra) -->
+      <article class="card" data-title="Usabilità" data-tags="ux,accessibilità,produttività">
+        <div class="card__media">
+          https://images.unsplash.com/photo-1553532435-93d532a45f55?q=80&w=1200&auto=format&fit=crop
+        </div>
+        <div class="card__body">
+          <h2 class="card__title">Usabilità</h2>
+          <p class="card__desc">Capacità di un prodotto di essere compreso e utilizzato con efficacia, efficienza e soddisfazione.</p>
+          <div class="card__tags">
+            <span class="tag">UX</span><span class="tag">Accessibilità</span><span class="tag">Produttività</span>
+          </div>
+
+          <!-- Accordion animato + fade -->
+          <details class="accordion">
+            <summary aria-controls="acc3" aria-expanded="false">Risorse & link</summary>
+            <div id="acc3" class="accordion__content" role="region" aria-label="Risorse su usabilità">
+              <ul class="links">
+                <li><a href="https://www.nngroup.com/articles/usability-101-introduction-to-usability/" target="_blank" rel="noopener">Usability 101 (NN/g)</a></li>
+              </ul>
+            </div>
+          </details>
+        </div>
+      </article>
+    </section>
+
+    <p id="empty" class="empty" role="status" aria-live="polite">Nessun concetto trovato.</p>
+  </div>
+
+  <script>
+    // Ricerca in tempo reale per titolo/descrizione/tag
+    const searchInput = document.getElementById('search');
+    const concepts = document.getElementById('concepts');
+    const cards = Array.from(concepts.querySelectorAll('.card'));
+    const emptyMsg = document.getElementById('empty');
+
+    function normalize(str) {
+      return (str || '').toLocaleLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+    }
+
+    function applySearch(query) {
+      const q = normalize(query);
+      let visible = 0;
+      cards.forEach(card => {
+        const title = normalize(card.dataset.title);
+        const tags = normalize(card.dataset.tags);
+        const desc = normalize(card.querySelector('.card__desc')?.textContent);
+        const match = !q || title.includes(q) || tags.includes(q) || desc.includes(q);
+        card.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      emptyMsg.style.display = visible ? 'none' : 'block';
+    }
+
+    searchInput?.addEventListener('input', (e) => applySearch(e.target.value));
+
+    // Toggle vista griglia/lista
+    const gridBtn = document.getElementById('gridBtn');
+    const listBtn = document.getElementById('listBtn');
+
+    function setListMode(enabled) {
+      concepts.classList.toggle('list', enabled);
+      gridBtn.setAttribute('aria-pressed', String(!enabled));
+      listBtn.setAttribute('aria-pressed', String(enabled));
+    }
+
+    gridBtn?.addEventListener('click', () => setListMode(false));
+    listBtn?.addEventListener('click', () => setListMode(true));
+
+    /* ============================================================
+       ANIMAZIONE ACCORDION (altezza + fade) + MUTUAL EXCLUSIVE
+       ============================================================ */
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Helper: chiusura animata di un accordion <details>
+    function closeAccordionAnimated(acc) {
+      const summary = acc.querySelector('summary');
+      const content = acc.querySelector('.accordion__content');
+      if (!acc.hasAttribute('open')) return; // già chiuso
+
+      if (prefersReduced) {
+        acc.removeAttribute('open');
+        content.style.height = '0px';
+        content.style.opacity = '0';
+        content.style.visibility = 'hidden';
+        summary?.setAttribute('aria-expanded', 'false');
+        return;
+      }
+
+      const DURATION = 240, EASING = 'ease';
+      content.style.transition = `height ${DURATION}ms ${EASING}, opacity ${DURATION}ms ${EASING}`;
+      acc.classList.add('is-animating');
+
+      const currentHeight = content.scrollHeight;
+      content.style.height = currentHeight + 'px';
+      content.style.opacity = '1';
+
+      // forza reflow
+      void content.offsetHeight;
+
+      content.style.height = '0px';
+      content.style.opacity = '0';
+
+      const onCloseEnd = (ev) => {
+        if (ev.propertyName !== 'height') return;
+        acc.removeAttribute('open');
+        content.style.visibility = 'hidden';
+        content.style.transition = '';
+        acc.classList.remove('is-animating');
+        content.removeEventListener('transitionend', onCloseEnd);
+      };
+      content.addEventListener('transitionend', onCloseEnd);
+
+      summary?.setAttribute('aria-expanded', 'false');
+    }
+
+    // Inizializza e aggiunge comportamento mutuamente esclusivo
+    document.querySelectorAll('details.accordion').forEach((acc) => {
+      const summary = acc.querySelector('summary');
+      const content = acc.querySelector('.accordion__content');
+
+      // Stato iniziale
+      if (acc.hasAttribute('open')) {
+        content.style.height = 'auto';
+        content.style.opacity = '1';
+        content.style.visibility = 'visible';
+        summary.setAttribute('aria-expanded', 'true');
+      } else {
+        summary.setAttribute('aria-expanded', 'false');
+      }
+
+      summary.addEventListener('click', (e) => {
+        // Gestiamo noi il toggle per animare
+        e.preventDefault();
+
+        const isOpen = acc.hasAttribute('open');
+
+        // === MUTUAL EXCLUSIVE: chiudi tutti gli altri nella stessa sezione ===
+        const container = acc.closest('section, .container, body') || document;
+        container.querySelectorAll('details.accordion').forEach((other) => {
+          if (other !== acc && other.hasAttribute('open')) {
+            closeAccordionAnimated(other);
+          }
+        });
+
+        // Ora apri/chiudi quello cliccato (con animazione)
+        if (prefersReduced) {
+          if (isOpen) {
+            closeAccordionAnimated(acc);
+          } else {
+            acc.setAttribute('open', '');
+            content.style.visibility = 'visible';
+            content.style.height = 'auto';
+            content.style.opacity = '1';
+            summary.setAttribute('aria-expanded', 'true');
+          }
+          return;
+        }
+
+        const DURATION = 240, EASING = 'ease';
+        content.style.transition = `height ${DURATION}ms ${EASING}, opacity ${DURATION}ms ${EASING}`;
+        acc.classList.add('is-animating');
+
+        if (!isOpen) {
+          // APRI
+          acc.setAttribute('open', '');
+          content.style.visibility = 'visible';
+          content.style.height = '0px';
+          content.style.opacity = '0';
+
+          requestAnimationFrame(() => {
+            const target = content.scrollHeight + 'px';
+            content.style.height = target;
+            content.style.opacity = '1';
+          });
+
+          const onOpenEnd = (ev) => {
+            if (ev.propertyName !== 'height') return;
+            content.style.height = 'auto';
+            content.style.transition = '';
+            acc.classList.remove('is-animating');
+            content.removeEventListener('transitionend', onOpenEnd);
+          };
+          content.addEventListener('transitionend', onOpenEnd);
+
+          summary.setAttribute('aria-expanded', 'true');
+        } else {
+          // CHIUDI
+          closeAccordionAnimated(acc);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
