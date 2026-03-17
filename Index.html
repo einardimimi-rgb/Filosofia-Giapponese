@@ -3,215 +3,27 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Filosofia giapponese — Kanji personalizzabili + carta washi</title>
-  <meta name="description" content="Card alternate con immagine a sinistra/destra, accordion animato e sfondo con kanji personalizzabili su carta washi." />
-
-  <!-- Google Fonts: Noto Serif JP per il titolo -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&display=swap" rel="stylesheet">
-
+  <title>Concetti — Accordion animato, alternato e mutuamente esclusivo</title>
+  <meta name="description" content="Card alternate con immagine a sinistra/destra e accordion animato (altezza + dissolvenza), mutuamente esclusivo." />
   <style>
-    /* =========================
-       VARIABILI GLOBALI
-       ========================= */
-    :root {
-      --bg-overlay-light: rgba(255, 255, 255, 0.78); /* velatura sopra il pattern kanji */
-      --bg-overlay-dark:  rgba(11, 18, 32, 0.65);
-      --kanji-color-light: #0f172a; /* driver di currentColor nel pattern */
-      --kanji-color-dark:  #e5e7eb;
-      --kanji-size: 300px 300px;    /* dimensione tassello del pattern */
-      /* pattern kanji di default (verrà sostituito via JS quando personalizzi) */
-      --kanji-pattern: url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'>\
-  <rect width='300' height='300' fill='none'/>\
-  <g fill='currentColor' fill-opacity='0.07' font-family='Noto Serif JP, serif' font-weight='700'>\
-    <text x='40'  y='110' font-size='96'>和</text>\
-    <text x='170' y='90'  font-size='72'>心</text>\
-    <text x='85'  y='220' font-size='88'>道</text>\
-    <text x='210' y='230' font-size='64'>静</text>\
-  </g>\
-</svg>");
-    }
-
     /* Reset di base */
     *, *::before, *::after { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-      line-height: 1.5;
-      color: #0f172a;
-      background: #f8fafc;
-      position: relative;
-      overflow-x: hidden;
-    }
-
-    /* =========================
-       SFONDO KANJI (layer più basso)
-       ========================= */
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      z-index: -2; /* sotto il washi */
-      background:
-        linear-gradient(var(--bg-overlay-light), var(--bg-overlay-light)), /* velatura per leggibilità */
-        var(--kanji-pattern); /* pattern kanji */
-      background-size: auto, var(--kanji-size);
-      background-repeat: no-repeat, repeat;
-      background-attachment: scroll, fixed; /* kanji fissi per effetto carta */
-      color: var(--kanji-color-light);      /* usato come currentColor nello SVG */
-    }
-
-    @media (prefers-color-scheme: dark) {
-      body { background: #0b1220; color: #e5e7eb; }
-      body::before {
-        background:
-          linear-gradient(var(--bg-overlay-dark), var(--bg-overlay-dark)),
-          var(--kanji-pattern);
-        color: var(--kanji-color-dark);
-      }
-    }
-
-    /* =========================
-       EFFETTO CARTA WASHI (grana + fibre)
-       ========================= */
-    body::after {
-      content: "";
-      position: fixed;
-      inset: 0;
-      z-index: -1; /* sopra i kanji, sotto i contenuti */
-      pointer-events: none;
-
-      /* Layer 1-2: granulosità con micro-puntinatura */
-      background-image:
-        radial-gradient(rgba(0,0,0,.025) 1px, transparent 1.2px),
-        radial-gradient(rgba(0,0,0,.02) 1px, transparent 1.2px),
-
-        /* Layer 3-4: fibre sottili in due direzioni */
-        repeating-linear-gradient(100deg, rgba(0,0,0,.028) 0 1px, transparent 1px 80px),
-        repeating-linear-gradient(-80deg, rgba(0,0,0,.022) 0 1px, transparent 1px 64px);
-      background-size:
-        6px 6px,
-        10px 10px,
-        100% 100%,
-        100% 100%;
-      background-blend-mode: multiply;
-      mix-blend-mode: multiply;
-      opacity: 1;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      body::after {
-        /* In dark mode le fibre puntano al chiaro e usano 'screen' per un effetto delicato */
-        background-image:
-          radial-gradient(rgba(255,255,255,.035) 1px, transparent 1.4px),
-          radial-gradient(rgba(255,255,255,.028) 1px, transparent 1.4px),
-          repeating-linear-gradient(100deg, rgba(255,255,255,.03) 0 1px, transparent 1px 80px),
-          repeating-linear-gradient(-80deg, rgba(255,255,255,.024) 0 1px, transparent 1px 64px);
-        background-blend-mode: screen;
-        mix-blend-mode: screen;
-      }
-    }
-
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; line-height: 1.5; color: #0f172a; background: #f8fafc; }
     img { max-width: 100%; display: block; }
 
     /* Contenitore */
     .container { width: min(1100px, 92vw); margin-inline: auto; padding: 2rem 0 4rem; }
 
-    /* Header con spaziature aumentate + stile giapponese */
-    header {
-      text-align: center;
-      margin-bottom: 3rem; /* spazio sotto la frase verso la toolbar */
-    }
-    header h1 {
-      margin: 0 0 1.5rem; /* spazio tra titolo e frase */
-      font-family: "Noto Serif JP", serif;
-      font-weight: 700;
-      letter-spacing: 1px;
-    }
-    /* Linea decorativa in stile sumi‑e sotto il titolo */
-    header h1::after {
-      content: "";
-      display: block;
-      width: 90px;
-      height: 3px;
-      margin: 1.2rem auto 1.8rem;
-      background: linear-gradient(to right, #000, #444);
-      border-radius: 2px;
-      opacity: 0.9;
-    }
-    @media (prefers-color-scheme: dark) {
-      header h1::after { background: linear-gradient(to right, #e5e7eb, #94a3b8); opacity: 0.75; }
-    }
-    header p { margin: 0 0 2rem; color: #475569; }
-    @media (prefers-color-scheme: dark) { header p { color: #94a3b8; } }
-
-    /* Pannello impostazioni sfondo (kanji personalizzabili) */
-    .bg-controls {
-      width: min(900px, 95%);
-      margin: 0 auto 1.25rem;
-      background: rgba(255,255,255,.75);
-      border: 1px solid #e2e8f0;
-      border-radius: .75rem;
-      padding: .75rem 1rem;
-      backdrop-filter: blur(2px);
-    }
-    .bg-controls > summary {
-      cursor: pointer;
-      font-weight: 600;
-      color: #0f172a;
-      list-style: none;
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-    }
-    .bg-controls > summary::before { content: "⚙️"; }
-    .bg-controls[open] { box-shadow: 0 8px 20px rgba(2,8,23,.1); }
-    .bg-controls__row {
-      margin-top: .75rem;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: .75rem;
-      align-items: center;
-    }
-    .bg-controls input[type="text"] {
-      width: 100%;
-      padding: .6rem .8rem;
-      border: 1px solid #cbd5e1;
-      border-radius: .6rem;
-      font-size: 1rem;
-      background: #fff;
-    }
-    .bg-controls button {
-      padding: .6rem .9rem;
-      border: 1px solid #cbd5e1;
-      border-radius: .6rem;
-      background: #0ea5e9;
-      color: #fff;
-      cursor: pointer;
-    }
-    .bg-controls small { color: #64748b; display: block; margin-top: .5rem; }
-    @media (prefers-color-scheme: dark) {
-      .bg-controls { background: rgba(15,23,42,.6); border-color: #334155; }
-      .bg-controls > summary { color: #e5e7eb; }
-      .bg-controls input[type="text"] { background: #0b1220; color: #e5e7eb; border-color: #334155; }
-      .bg-controls button { border-color: #1f2937; }
-      .bg-controls small { color: #94a3b8; }
-    }
+    header { text-align: center; margin-bottom: 2rem; }
+    header h1 { margin: 0 0 .5rem; font-size: clamp(1.6rem, 2.5vw + 1rem, 2.4rem); color: #0f172a; }
+    header p { margin: 0; color: #475569; }
 
     /* Toolbar */
     .toolbar { display: grid; grid-template-columns: 1fr auto; gap: .75rem; margin: 1.5rem 0 1rem; }
-    .search { padding: .7rem .9rem; border: 1px solid #cbd5e1; border-radius: .75rem; font-size: 1rem; background: #fff; }
+    .search { padding: .7rem .9rem; border: 1px solid #cbd5e1; border-radius: .75rem; font-size: 1rem; }
     .view-toggle { display: inline-flex; gap: .5rem; }
     .btn { padding: .65rem .9rem; border: 1px solid #cbd5e1; background: white; color: #0f172a; border-radius: .75rem; cursor: pointer; }
     .btn[aria-pressed="true"] { background: #0ea5e9; color: white; border-color: #0ea5e9; }
-
-    @media (prefers-color-scheme: dark) {
-      .search { background: #0b1220; color: #e5e7eb; border-color: #334155; }
-      .btn { background: #0b1220; color: #e5e7eb; border-color: #334155; }
-    }
 
     /* Griglia contenitore delle card */
     .grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
@@ -219,21 +31,15 @@
 
     /* CARD con layout alternato */
     .card {
-      background: rgba(255,255,255,0.78);
+      background: white;
       border: 1px solid #e2e8f0;
       border-radius: 1rem;
       overflow: hidden;
       display: flex;
       flex-direction: column; /* mobile: verticale */
-      transition: box-shadow .2s ease, transform .2s ease, background-color .2s ease;
-      backdrop-filter: saturate(1.1) blur(1px);
+      transition: box-shadow .2s ease, transform .2s ease;
     }
-    .card:hover { box-shadow: 0 10px 24px rgba(2, 8, 23, 0.12); transform: translateY(-2px); }
-
-    @media (prefers-color-scheme: dark) {
-      .card { background: rgba(15,23,42,0.6); border-color: #1f2937; }
-      .card:hover { box-shadow: 0 10px 24px rgba(0,0,0,0.35); }
-    }
+    .card:hover { box-shadow: 0 10px 24px rgba(2, 8, 23, 0.08); transform: translateY(-2px); }
 
     @media (min-width: 640px) {
       .card { flex-direction: row; min-height: 180px; }
@@ -247,7 +53,6 @@
       overflow: hidden;
     }
     .card__media img { width: 100%; height: 100%; object-fit: cover; }
-    @media (prefers-color-scheme: dark) { .card__media { background: #111827; } }
 
     @media (min-width: 640px) {
       .card__media { flex: 0 0 40%; aspect-ratio: auto; height: auto; max-height: 240px; }
@@ -260,12 +65,6 @@
     .card__desc { margin: 0; color: #475569; font-size: .98rem; }
     .card__tags { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .2rem; }
     .tag { font-size: .75rem; background: #e2e8f0; color: #334155; padding: .25rem .5rem; border-radius: 999px; }
-
-    @media (prefers-color-scheme: dark) {
-      .card__title { color: #e5e7eb; }
-      .card__desc { color: #cbd5e1; }
-      .tag { background: #1f2937; color: #e2e8f0; }
-    }
 
     /* ========== ACCORDION ========== */
     .accordion { margin-top: .6rem; border-top: 1px solid #e2e8f0; padding-top: .6rem; }
@@ -295,8 +94,13 @@
       visibility: hidden; /* niente tab/focus quando chiuso */
       will-change: height, opacity;
     }
-    .accordion.is-animating .accordion__content { /* transition impostata via JS */ }
-    .accordion[open] .accordion__content { visibility: visible; }
+    .accordion.is-animating .accordion__content {
+      /* la transition viene impostata via JS */
+    }
+    .accordion[open] .accordion__content {
+      /* stato finale gestito via JS (height:auto) */
+      visibility: visible;
+    }
 
     .links { margin: .5rem 0 0 1.1rem; padding: 0; }
     .links li { margin: .25rem 0; }
@@ -308,6 +112,21 @@
 
     /* Stato “nessun risultato” */
     .empty { display: none; text-align: center; color: #64748b; padding: 2rem 1rem; }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+      body { background: #0b1220; color: #e5e7eb; }
+      header h1 { color: #e5e7eb; }
+      header p { color: #94a3b8; }
+      .search { background: #0b1220; color: #e5e7eb; border-color: #334155; }
+      .btn { background: #0b1220; color: #e2e7eb; border-color: #334155; }
+      .grid .card { background: #0f172a; border-color: #1f2937; }
+      .card__desc { color: #cbd5e1; }
+      .tag { background: #1f2937; color: #e2e8f0; }
+      .accordion { border-top-color: #334155; }
+      .links a { color: #e5e7eb; text-decoration-color: #64748b; }
+      .links a:hover { color: #7dd3fc; }
+    }
 
     /* Vista lista (opzionale: forza 1 colonna) */
     .grid.list { grid-template-columns: 1fr !important; }
@@ -321,19 +140,9 @@
 <body>
   <div class="container">
     <header>
-      <h1>Filosofia giapponese <em>in pillole</em></h1>
-      <p>Introduzione alla filosofia giapponese applicata al vivere quotidiano.</p>
+      <h1>Filosofia giapponese <i>in pillole</i></h1>
+      <p>Introduzione alla filosofia giapponese applicata al vivere quotidiano. Propongo questa sezione dopo acuta ricerca che nasce dalla necessità di ritrovare se stessi imparando a gestire il proprio spazio nel vivere di tutti i giorni senza farsi trascinare dalla frenesia e la pressione ci sottopongono.</p>
     </header>
-
-    <!-- PANNELLO: personalizza il set di kanji nello sfondo -->
-    <details class="bg-controls">
-      <summary>Impostazioni sfondo (kanji personalizzabili)</summary>
-      <div class="bg-controls__row">
-        <input id="kanjiInput" type="text" placeholder="Es: 和, 心, 道, 静" aria-label="Inserisci i kanji separati da virgola o spazio">
-        <button id="applyKanji">Aggiorna sfondo</button>
-      </div>
-      <small>Consiglio: usa 3–6 caratteri kanji. Esempi: 和, 心, 道, 静, 禅, 夢.</small>
-    </details>
 
     <!-- Toolbar -->
     <div class="toolbar" role="region" aria-label="Strumenti di visualizzazione">
@@ -347,23 +156,23 @@
     <!-- Elenco concetti -->
     <section id="concepts" class="grid" aria-live="polite">
       <!-- CARD 1 (immagine a sinistra) -->
-      <article class="card" data-title="Kaizen" data-tags="miglioramento,processi,crescita">
+      <article class="card" data-title="Astrazione" data-tags="design,software,modelli">
         <div class="card__media">
-          <img src="https://images.unsplash.com/photo-1526378722484-bd91ca387e72?q=80&w=1200&auto=format&fit=crop" alt="Pattern astratto blu, senso di ordine e progresso">
+          https://images.unsplash.com/photo-1526378722484-bd91ca387e72?q=80&w=1200&auto=format&fit=crop
         </div>
         <div class="card__body">
           <h2 class="card__title">Kaizen</h2>
-          <p class="card__desc">Miglioramento continuo attraverso piccoli passi costanti, focalizzati su processo e apprendimento.</p>
+          <p class="card__desc">Processo di semplificazione che nasconde i dettagli complessi per mettere in evidenza la struttura essenziale.</p>
           <div class="card__tags">
-            <span class="tag">Processi</span><span class="tag">Crescita</span><span class="tag">Disciplina</span>
+            <span class="tag">Design</span><span class="tag">Software</span><span class="tag">Modelli</span>
           </div>
 
           <!-- Accordion animato + fade -->
           <details class="accordion">
             <summary aria-controls="acc1" aria-expanded="false">Risorse & link</summary>
-            <div id="acc1" class="accordion__content" role="region" aria-label="Risorse su Kaizen">
+            <div id="acc1" class="accordion__content" role="region" aria-label="Risorse su astrazione">
               <ul class="links">
-                <li><a href="https://en.wikipedia.org/wiki/Kaizen" target="_blank" rel="noopener">Kaizen (Wikipedia)</a></li>
+                <li><a href="https://it.wikipedia.org/wiki/Astrazione_(informatica)" target="_blank" rel="noopener">Astrazione (Wikipedia)</a></li>
               </ul>
             </div>
           </details>
@@ -371,23 +180,23 @@
       </article>
 
       <!-- CARD 2 (immagine a destra) -->
-      <article class="card" data-title="Ikigai" data-tags="scopo,benessere,significato">
+      <article class="card" data-title="Modularità" data-tags="architettura,riuso,scalabilità">
         <div class="card__media">
-          <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200&auto=format&fit=crop" alt="Architettura modulare geometrica">
+          https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200&auto=format&fit=crop
         </div>
         <div class="card__body">
           <h2 class="card__title">Ikigai</h2>
-          <p class="card__desc">Il motivo per cui ti alzi al mattino: l’intersezione fra ciò che ami, ciò che sai fare, ciò di cui il mondo ha bisogno e per cui puoi essere pagato.</p>
+          <p class="card__desc">Organizzazione del sistema in componenti indipendenti che possono essere sviluppati, testati e riutilizzati separatamente.</p>
           <div class="card__tags">
-            <span class="tag">Scopo</span><span class="tag">Benessere</span><span class="tag">Consapevolezza</span>
+            <span class="tag">Architettura</span><span class="tag">Riuso</span><span class="tag">Scalabilità</span>
           </div>
 
           <!-- Accordion animato + fade -->
           <details class="accordion">
             <summary aria-controls="acc2" aria-expanded="false">Risorse & link</summary>
-            <div id="acc2" class="accordion__content" role="region" aria-label="Risorse su Ikigai">
+            <div id="acc2" class="accordion__content" role="region" aria-label="Risorse su modularità">
               <ul class="links">
-                <li><a href="https://en.wikipedia.org/wiki/Ikigai" target="_blank" rel="noopener">Ikigai (Wikipedia)</a></li>
+                <li><a href="https://it.wikipedia.org/wiki/Modularit%C3%A0" target="_blank" rel="noopener">Modularità (Wikipedia)</a></li>
               </ul>
             </div>
           </details>
@@ -395,23 +204,23 @@
       </article>
 
       <!-- CARD 3 (immagine a sinistra) -->
-      <article class="card" data-title="Shibumi" data-tags="semplicità,essenzialità,eleganza">
+      <article class="card" data-title="Usabilità" data-tags="ux,accessibilità,produttività">
         <div class="card__media">
-          <img src="https://images.unsplash.com/photo-1553532435-93d532a45f55?q=80&w=1200&auto=format&fit=crop" alt="Minimalismo elegante su fondo chiaro">
+          https://images.unsplash.com/photo-1553532435-93d532a45f55?q=80&w=1200&auto=format&fit=crop
         </div>
         <div class="card__body">
-          <h2 class="card__title">Shibumi</h2>
-          <p class="card__desc">La qualità di un’eleganza sobria e senza sforzo: semplicità, equilibrio e perfezione non appariscente.</p>
+          <h2 class="card__title">Usabilità</h2>
+          <p class="card__desc">Capacità di un prodotto di essere compreso e utilizzato con efficacia, efficienza e soddisfazione.</p>
           <div class="card__tags">
-            <span class="tag">Semplicità</span><span class="tag">Equilibrio</span><span class="tag">Eleganza</span>
+            <span class="tag">UX</span><span class="tag">Accessibilità</span><span class="tag">Produttività</span>
           </div>
 
           <!-- Accordion animato + fade -->
           <details class="accordion">
             <summary aria-controls="acc3" aria-expanded="false">Risorse & link</summary>
-            <div id="acc3" class="accordion__content" role="region" aria-label="Risorse su Shibumi">
+            <div id="acc3" class="accordion__content" role="region" aria-label="Risorse su usabilità">
               <ul class="links">
-                <li><a href="https://en.wikipedia.org/wiki/Shibui" target="_blank" rel="noopener">Shibui / Shibumi</a></li>
+                <li><a href="https://www.nngroup.com/articles/usability-101-introduction-to-usability/" target="_blank" rel="noopener">Usability 101 (NN/g)</a></li>
               </ul>
             </div>
           </details>
@@ -430,7 +239,7 @@
     const emptyMsg = document.getElementById('empty');
 
     function normalize(str) {
-      return (str || '').toLocaleLowerCase().normalize('NFD').replace(/\\p{Diacritic}/gu, '');
+      return (str || '').toLocaleLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
     }
 
     function applySearch(query) {
@@ -471,7 +280,7 @@
     function closeAccordionAnimated(acc) {
       const summary = acc.querySelector('summary');
       const content = acc.querySelector('.accordion__content');
-      if (!acc.hasAttribute('open')) return;
+      if (!acc.hasAttribute('open')) return; // già chiuso
 
       if (prefersReduced) {
         acc.removeAttribute('open');
@@ -489,7 +298,10 @@
       const currentHeight = content.scrollHeight;
       content.style.height = currentHeight + 'px';
       content.style.opacity = '1';
-      void content.offsetHeight; // reflow
+
+      // forza reflow
+      void content.offsetHeight;
+
       content.style.height = '0px';
       content.style.opacity = '0';
 
@@ -506,11 +318,12 @@
       summary?.setAttribute('aria-expanded', 'false');
     }
 
-    // Inizializza + mutual exclusive
+    // Inizializza e aggiunge comportamento mutuamente esclusivo
     document.querySelectorAll('details.accordion').forEach((acc) => {
       const summary = acc.querySelector('summary');
       const content = acc.querySelector('.accordion__content');
 
+      // Stato iniziale
       if (acc.hasAttribute('open')) {
         content.style.height = 'auto';
         content.style.opacity = '1';
@@ -521,11 +334,12 @@
       }
 
       summary.addEventListener('click', (e) => {
+        // Gestiamo noi il toggle per animare
         e.preventDefault();
 
         const isOpen = acc.hasAttribute('open');
 
-        // Chiudi gli altri nella stessa sezione
+        // === MUTUAL EXCLUSIVE: chiudi tutti gli altri nella stessa sezione ===
         const container = acc.closest('section, .container, body') || document;
         container.querySelectorAll('details.accordion').forEach((other) => {
           if (other !== acc && other.hasAttribute('open')) {
@@ -533,6 +347,7 @@
           }
         });
 
+        // Ora apri/chiudi quello cliccato (con animazione)
         if (prefersReduced) {
           if (isOpen) {
             closeAccordionAnimated(acc);
@@ -551,6 +366,7 @@
         acc.classList.add('is-animating');
 
         if (!isOpen) {
+          // APRI
           acc.setAttribute('open', '');
           content.style.visibility = 'visible';
           content.style.height = '0px';
@@ -573,90 +389,10 @@
 
           summary.setAttribute('aria-expanded', 'true');
         } else {
+          // CHIUDI
           closeAccordionAnimated(acc);
         }
       });
-    });
-
-    /* ============================================================
-       KANJI PERSONALIZZABILI: genera SVG -> data URI -> CSS var
-       ============================================================ */
-    const inputKanji = document.getElementById('kanjiInput');
-    const btnApply = document.getElementById('applyKanji');
-
-    // Posizioni predefinite nel tassello 300x300 (si cicla se > POS.length)
-    const POS = [
-      {x:  40, y: 110, size: 96},
-      {x: 170, y:  90, size: 72},
-      {x:  85, y: 220, size: 88},
-      {x: 210, y: 230, size: 64},
-      {x:  20, y: 260, size: 56},
-      {x: 140, y: 160, size: 64}
-    ];
-
-    function buildKanjiSVG(chars) {
-      const items = [];
-      for (let i = 0; i < Math.max(chars.length, 4); i++) {
-        const c = chars[i % chars.length];
-        const {x, y, size} = POS[i % POS.length];
-        items.push(`<text x='${x}' y='${y}' font-size='${size}'>${c}</text>`);
-      }
-      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'>
-  <rect width='300' height='300' fill='none'/>
-  <g fill='currentColor' fill-opacity='0.07' font-family='Noto Serif JP, serif' font-weight='700'>
-    ${items.join('')}
-  </g>
-</svg>`;
-      const encoded = encodeURIComponent(svg)
-        // preserva spaziature minime e ottimizza dimensione link
-        .replace(/%0A/g, '')
-        .replace(/%20/g, ' ');
-      return `url("data:image/svg+xml;charset=utf8,${encoded}")`;
-    }
-
-    function parseKanjiInput(text) {
-      if (!text) return [];
-      // Split per virgola o whitespace, filtra stringhe vuote
-      return text.split(/[\\s,]+/).map(s => s.trim()).filter(Boolean);
-    }
-
-    function applyKanjiPattern(chars) {
-      if (!chars || chars.length === 0) {
-        // default
-        chars = ['和','心','道','静'];
-      }
-      const url = buildKanjiSVG(chars);
-      document.documentElement.style.setProperty('--kanji-pattern', url);
-      // salva preferenza
-      try { localStorage.setItem('kanjiSet', JSON.stringify(chars)); } catch (_) {}
-    }
-
-    // Init: riprendi da localStorage o imposta placeholder
-    (function initKanji() {
-      let saved = [];
-      try {
-        const raw = localStorage.getItem('kanjiSet');
-        if (raw) saved = JSON.parse(raw);
-      } catch (_) {}
-      if (saved && saved.length) {
-        inputKanji.value = saved.join(', ');
-        applyKanjiPattern(saved);
-      } else {
-        inputKanji.placeholder = 'Es: 和, 心, 道, 静';
-        applyKanjiPattern(['和','心','道','静']);
-      }
-    })();
-
-    btnApply?.addEventListener('click', (e) => {
-      e.preventDefault();
-      const chars = parseKanjiInput(inputKanji.value);
-      // tieni solo caratteri CJK (approssimazione Unicode)
-      const filtered = chars
-        .map(c => c[0])
-        .filter(Boolean)
-        .filter(ch => /[\\u3040-\\u30ff\\u3400-\\u9fff\\uf900-\\ufa6d]/.test(ch))
-        .slice(0, 12); // limite ragionevole
-      applyKanjiPattern(filtered.length ? filtered : ['和','心','道','静']);
     });
   </script>
 </body>
