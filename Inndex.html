@@ -137,7 +137,9 @@ body::before {
   background-size: 3px 3px;
   opacity: 0.5;
   pointer-events: none;
-  z-index: -1;
+  z-index: 0;
+  position: fixed;
+  pointer-events: none;
   animation: minimalRain 14s linear infinite;
   filter: blur(0.3px);
 }
