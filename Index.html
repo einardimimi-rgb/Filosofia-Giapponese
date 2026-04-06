@@ -7,6 +7,25 @@
   <meta name="description" content="Card alternate in vista lista con barra di ricerca compatta a destra e modale libri." />
 
   <style>
+    /* ===== SFONDO MINIMAL: effetto condensa / micro-gocce ===== */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 3px 3px;        /* dimensione delle micro-gocce */
+  opacity: 0.12;                   /* intensità totale */
+  pointer-events: none;            /* non blocca i click */
+  z-index: -1;                     /* resta sotto tutto */
+  animation: minimalRain 14s linear infinite;
+  filter: blur(0.3px);             /* ammorbidisce il pattern */
+}
+/* movimento verticale lentissimo */
+@keyframes minimalRain {
+  from { transform: translateY(0); }
+  to   { transform: translateY(220px); }
+}
     /* Reset di base */
     *, *::before, *::after { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; line-height: 1.5; color: #0f172a; background: #f8fafc; }
