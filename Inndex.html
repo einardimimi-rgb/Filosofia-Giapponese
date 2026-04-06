@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Concetti — Lista con search compatta a destra</title>
+  <meta name="description" content="Card alternate in vista lista con barra di ricerca compatta a destra e modale libri." />
+
+  <style>
+    /* Reset di base */
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; line-height: 1.5; color: #0f172a; background: #f8fafc; }
+    img { max-width: 100%; display: block; }
+
+    /* Contenitore */
+    .container { width: min(1100px, 92vw); margin-inline: auto; padding: 2rem 0 4rem; }
+    header { text-align: center; margin-bottom: 2rem; }
+    header h1 { margin: 0 0 3.5rem; font-size: clamp(1.6rem, 2.5vw + 1rem, 2.4rem); color: #0f172a; }
+    header p { margin: 0; color: #475569; }
+
+    /* Toolbar compatta (search a destra) */
+    .toolbar--compact {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: .5rem;
+      margin: 1rem 0 .75rem;
+    }
+    .search { padding: .7rem .9rem; border: 1px solid #cbd5e1; border-radius: .75rem; font-size: 1rem; }
+    .search--sm {
+      width: min(260px, 46vw);
+      padding: .45rem .65rem;
+      font-size: .95rem;
+      border-radius: .6rem;
+    }
+
+    /* Griglia -> forzata a lista (una colonna) */
+    .grid { display: grid; grid-template-columns: 1fr !important; gap: 1rem; }
+
+    /* CARD con layout alternato (resta valido per l’ordine media/body) */
+    .card {
+      background: white; border: 1px solid #e2e8f0; border-radius: 1rem; overflow: hidden;
+      display: flex; flex-direction: column; transition: box-shadow .2s ease, transform .2s ease;
+    }
+    .card:hover { box-shadow: 0 10px 24px rgba(2, 8, 23, 0.08); transform: translateY(-2px); }
+    @media (min-width: 640px) {
+      .card { flex-direction: row; min-height: 180px; }
+      .card:nth-child(even) { flex-direction: row-reverse; }
+    }
+
+    /* Media (immagine) */
+    .card__media { background: #f1f5f9; aspect-ratio: 16 / 9; overflow: hidden; }
+    .card__media img { width: 100%; height: 100%; object-fit: cover; }
+    @media (min-width: 640px) {
+      .card__media { flex: 0 0 40%; aspect-ratio: auto; height: auto; max-height: 240px; }
+      .card__body { flex: 1; }
+    }
+
+    /* Corpo testuale */
+    .card__body { padding: 1rem 1rem 1.1rem; display: grid; gap: .6rem; align-content: start; }
+    .card__title { margin: 0; font-size: 1.1rem; color: #0f172a; }
+    .card__desc { margin: 0; color: #475569; font-size: .98rem; }
+    .card__tags { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .2rem; }
+    .tag { font-size: .75rem; background: #e2e8f0; color: #334155; padding: .25rem .5rem; border-radius: 999px; }
+
+    /* CTA + sezione libri (come impostata prima) */
+    .card__head { margin-top: .6rem; padding-top: .6rem; border-top: 1px solid #e2e8f0; display: flex; align-items: center; gap: .75rem; }
+    .card__head-left { flex: 1 1 auto; }
+    .card__head-right { margin-left: auto; }
+    .card__head-label { font-size: .95rem; color: #475569; }
+    .btn-cta { padding: .5rem .85rem; border-radius: .75rem; border: 1px solid #0ea5e9; background: #0ea5e9; color: #fff; cursor: pointer; font-size: .9rem; }
+    .btn-cta:hover { background: #0284c7; border-color: #0284c7; }
+    .books-wrapper { margin-top: .75rem; }
+    .books-title { margin: 0 0 .4rem; font-size: 1rem; }
+    .books-list { margin: 0; padding-left: 1.1rem; }
+
+    /* Stato “nessun risultato” */
+    .empty { display: none; text-align: center; color: #64748b; padding: 2rem 1rem; }
+
+    /* Modale (come impostata prima) */
+    .modal[hidden] { display: none !important; }
+    .modal { position: fixed; inset: 0; z-index: 1000; }
+    .modal-backdrop { position: absolute; inset: 0; background: rgba(2,6,23,.45); }
+    .modal-dialog { position: relative; margin: 6vh auto; max-width: 920px; background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(2,6,23,.2); overflow: hidden; }
+    .modal-header, .modal-footer { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .9rem 1rem; border-bottom: 1px solid #F1F5F9; }
+    .modal-footer { border-top: 1px solid #F1F5F9; border-bottom: 0; }
+    .modal-body { padding: 1rem; }
+    .icon-btn { background: transparent; border: 0; font-size: 1.1rem; cursor: pointer; }
+
+    .table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .table th, .table td { padding: .6rem .7rem; border-bottom: 1px solid #e5e7eb; text-align: left; vertical-align: middle; }
+    .table th { background: #f8fafc; color: #334155; font-weight: 600; }
+    .col-titolo { width: 44%; } .col-autore { width: 26%; } .col-link { width: 30%; }
+
+    .book-title { color: #0f172a; text-decoration: none; position: relative; outline: none; border-radius: 6px; padding: 2px 0; }
+    .book-title:hover, .book-title:focus-visible { color: #0ea5e9; text-decoration: underline; text-underline-offset: 2px; }
+    .book-title[data-tooltip]::after {
+      content: attr(data-tooltip); position: absolute; left: 0; top: calc(100% + 6px);
+      min-width: 240px; max-width: clamp(240px, 60vw, 560px); white-space: normal;
+      background: #0f172a; color: #fff; padding: .5rem .6rem; border-radius: .5rem; box-shadow: 0 10px 24px rgba(2,6,23,.18);
+      pointer-events: none; opacity: 0; transform: translateY(-4px); transition: opacity .12s ease, transform .12s ease; z-index: 10;
+    }
+    .book-title[data-tooltip]:hover::after, .book-title[data-tooltip]:focus-visible::after { opacity: 1; transform: translateY(0); }
+    .external-link { color: #0ea5e9; text-decoration: underline; text-underline-offset: 2px; word-break: break-all; }
+    .external-link:hover { color: #0284c7; }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .modal-dialog { animation: scaleIn .16s ease-out; }
+      @keyframes scaleIn { from { transform: translateY(6px) scale(.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+    }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+      body { background: #0b1220; color: #e5e7eb; }
+      header h1 { color: #e5e7eb; }
+      header p { color: #94a3b8; }
+      .search { background: #0b1220; color: #e5e7eb; border-color: #334155; }
+      .grid .card { background: #0f172a; border-color: #1f2937; }
+      .card__desc { color: #cbd5e1; }
+      .tag { background: #1f2937; color: #e2e8f0; }
+
+      .modal-dialog { background: #0f172a; }
+      .modal-header, .modal-footer { border-color: #334155; }
+      .table th { background: #0b1220; color: #e5e7eb; }
+      .table th, .table td { border-color: #334155; }
+      .book-title::after { background: #111827; }
+    }
+  
+/* ===== SFONDO MINIMAL: effetto condensa / micro-gocce ===== */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 3px 3px;
+  opacity: 0.12;
+  pointer-events: none;
+  z-index: -1;
+  animation: minimalRain 14s linear infinite;
+  filter: blur(0.3px);
+}
+
+@keyframes minimalRain {
+  from { transform: translateY(0); }
+  to   { transform: translateY(220px); }
+}
+
+</style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>Filosofia giapponese <i>in pillole</i></h1>
+      <p>Introduzione alla filosofia giapponese applicata al vivere quotidiano. Propongo questa sezione dopo acuta ricerca che nasce dalla necessità di ritrovare se stessi imparando a gestire il proprio spazio nel vivere di tutti i giorni senza farsi trascinare dalla frenesia e la pressione ci sottopongono.</p>
+    </header>
+
+    <!-- Toolbar compatta con search a destra -->
+    <div class="toolbar toolbar--compact" role="region" aria-label="Strumenti di visualizzazione">
+      <input id="search" class="search search--sm" type="search" placeholder="Cerca..." aria-label="Cerca" />
+    </div>
+
+    <!-- Elenco concetti in modalità lista (forzata) -->
+    <section id="concepts" class="grid" aria-live="polite">
+      <!-- CARD 1 -->
+      <article class="card" data-title="Astrazione" data-tags="design,software,modelli">
+        <div class="card__media"><img src="https://github.com/einardimimi-rgb/Immagini/blob/main/Kaizen.png?raw=true" alt="Caratteri Giapponesi" /></div><div class="card__body">
+          <h2 class="card__title">Kaizen</h2>
+          <p class="card__desc">Processo di semplificazione che nasconde i dettagli complessi per mettere in evidenza la struttura essenziale.</p>
+          <div class="card__tags"><span class="tag">Design</span><span class="tag">Software</span><span class="tag">Modelli</span></div>
+          <div class="card__head">
+            <div class="card__head-left"><strong class="card__head-label">Risorse</strong></div>
+            <div class="card__head-right"><button class="btn-cta" data-modal-target="#booksModal" aria-haspopup="dialog">Gestisci libri</button></div>
+          </div>
+          <div class="books-wrapper" aria-live="polite"><h3 class="books-title" hidden>Libri consigliati</h3><ul class="books-list"></ul></div>
+        </div>
+      </article>
+
+      <!-- CARD 2 -->
+      <article class="card" data-title="Modularità" data-tags="architettura,riuso,scalabilità">
+        <div class="card__media"><img src="https://github.com/einardimimi-rgb/Immagini/blob/main/Ikigai.png?raw=true" alt="Ikigai" /></div>
+        <div class="card__body">
+          <h2 class="card__title">Ikigai</h2>
+          <p class="card__desc">Organizzazione del sistema in componenti indipendenti che possono essere sviluppati, testati e riutilizzati separatamente.</p>
+          <div class="card__tags"><span class="tag">Architettura</span><span class="tag">Riuso</span><span class="tag">Scalabilità</span></div>
+          <div class="card__head">
+            <div class="card__head-left"><strong class="card__head-label">Risorse</strong></div>
+            <div class="card__head-right"><button class="btn-cta" data-modal-target="#booksModal" aria-haspopup="dialog">Gestisci libri</button></div>
+          </div>
+          <div class="books-wrapper" aria-live="polite"><h3 class="books-title" hidden>Libri consigliati</h3><ul class="books-list"></ul></div>
+        </div>
+      </article>
+
+      <!-- CARD 3 -->
+      <article class="card" data-title="Usabilità" data-tags="ux,accessibilità,produttività">
+        <div class="card__media">https://images.unsplash.com/photo-1553532435-93d532a45f55?q=80&w=1200&auto=format&fit=crop</div>
+        <div class="card__body">
+          <h2 class="card__title">Usabilità</h2>
+          <p class="card__desc">Capacità di un prodotto di essere compreso e utilizzato con efficacia, efficienza e soddisfazione.</p>
+          <div class="card__tags"><span class="tag">UX</span><span class="tag">Accessibilità</span><span class="tag">Produttività</span></div>
+          <div class="card__head">
+            <div class="card__head-left"><strong class="card__head-label">Risorse</strong></div>
+            <div class="card__head-right"><button class="btn-cta" data-modal-target="#booksModal" aria-haspopup="dialog">Gestisci libri</button></div>
+          </div>
+          <div class="books-wrapper" aria-live="polite"><h3 class="books-title" hidden>Libri consigliati</h3><ul class="books-list"></ul></div>
+        </div>
+      </article>
+    </section>
+
+    <p id="empty" class="empty" role="status" aria-live="polite">Nessun concetto trovato.</p>
+  </div>
+
+  <!-- MODALE (statica) -->
+  <div class="modal" id="booksModal" role="dialog" aria-modal="true" aria-labelledby="booksModalTitle" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-dialog" role="document" aria-describedby="booksModalDesc">
+      <header class="modal-header">
+        <h2 id="booksModalTitle">Libri consigliati</h2>
+        <button class="icon-btn" type="button" data-close aria-label="Chiudi dialogo">✕</button>
+      </header>
+      <div class="modal-body">
+        <p id="booksModalDesc" class="sr-only">Elenco statico di libri con titolo, autore e link. Passa sul titolo per leggere il tooltip.</p>
+        <div class="table-wrap">
+          <table class="table" aria-describedby="booksModalDesc">
+            <thead>
+              <tr><th class="col-titolo" scope="col">Titolo</th><th class="col-autore" scope="col">Autore</th><th class="col-link" scope="col">Link</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><a class="book-title" href="#" data-tooltip="Una guida pratica per migliorare in modo continuo, un giorno alla volta.">Migliorare ogni giorno</a></td>
+                <td>G. Tanaka</td>
+                <td><a class="external-link" href="https://esempio.com/migliorare" target="_blank" rel="noopener">https://esempio.com/migliorare</a></td>
+              </tr>
+              <tr>
+                <td><a class="book-title" href="#" data-tooltip="Alla scoperta dell'Ikigai: cosa ami, in cosa sei bravo e cosa serve al mondo.">Il senso delle cose: Ikigai</a></td>
+                <td>A. Nakamura</td>
+                <td><a class="external-link" href="https://esempio.com/ikigai" target="_blank" rel="noopener">https://esempio.com/ikigai</a></td>
+              </tr>
+              <tr>
+                <td><a class="book-title" href="#" data-tooltip="Principi di usabilità per progettare interfacce inclusive ed efficaci.">Usabilità in pratica</a></td>
+                <td>M. Rossi</td>
+                <td><a class="external-link" href="https://esempio.com/usabilita" target="_blank" rel="noopener">https://esempio.com/usabilita</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <footer class="modal-footer">
+        <span aria-hidden="true"></span>
+        <button class="btn" type="button" data-close>Chiudi</button>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    // ===== Ricerca =====
+    const searchInput = document.getElementById('search');
+    const concepts = document.getElementById('concepts');
+    const cards = Array.from(concepts.querySelectorAll('.card'));
+    const emptyMsg = document.getElementById('empty');
+
+    function normalize(str) {
+      return (str ?? '').toLocaleLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+    }
+    function applySearch(query) {
+      const q = normalize(query);
+      let visible = 0;
+      cards.forEach(card => {
+        const title = normalize(card.dataset.title);
+        const tags = normalize(card.dataset.tags);
+        const desc = normalize(card.querySelector('.card__desc')?.textContent);
+        const match = !q || title.includes(q) || tags.includes(q) || desc.includes(q);
+        card.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      emptyMsg.style.display = visible ? 'none' : 'block';
+    }
+    searchInput?.addEventListener('input', (e) => applySearch(e.target.value));
+
+    // ===== Forza modalità lista (niente toggle) =====
+    concepts.classList.add('list'); // utile se mantieni CSS che differenzia .grid vs .grid.list
+
+    // ===== Apertura/chiusura modale (statica) =====
+    (function () {
+      const modal    = document.getElementById('booksModal');
+      const backdrop = modal.querySelector('.modal-backdrop');
+      const closeEls = modal.querySelectorAll('[data-close]');
+      let lastFocus = null;
+
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-modal-target="#booksModal"]');
+        if (!btn) return;
+        lastFocus = document.activeElement;
+        modal.hidden = false;
+        const firstTitle = modal.querySelector('.book-title');
+        (firstTitle ?? modal.querySelector('.modal-dialog'))?.focus?.();
+      });
+      function closeModal() {
+        modal.hidden = true;
+        if (lastFocus) lastFocus.focus();
+      }
+      backdrop.addEventListener('click', closeModal);
+      closeEls.forEach(el => el.addEventListener('click', closeModal));
+      document.addEventListener('keydown', (e) => { if (!modal.hidden && e.key === 'Escape') closeModal(); });
+    })();
+  </script>
+</body>
+</html>
